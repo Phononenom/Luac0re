@@ -11,6 +11,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      PS2DEV: /usr/local/ps2dev
+      PS2SDK: /usr/local/ps2dev/ps2sdk
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -24,17 +28,23 @@ jobs:
           echo "--- ps2/shellcode ---"
           ls -la ps2/shellcode || true
 
-      - name: Build PS2 shellcode with ps2dev Docker
+      - name: Install precompiled ps2dev toolchain
         run: |
-          docker run --rm -v "$GITHUB_WORKSPACE:/src" -w /src/ps2/shellcode ps2dev/ps2dev:latest bash -c '
-            apt-get update -qq && apt-get install -y -qq make >/dev/null
-            make
-          '
+          sudo mkdir -p "$PS2DEV"
+          sudo chown -R "$USER" "$PS2DEV"
+          curl -o ps2dev-latest.tar.gz -LC - \
+            https://github.com/ps2dev/ps2dev/releases/download/latest/ps2dev-ubuntu-latest.tar.gz
+          tar -xf ps2dev-latest.tar.gz --strip-components 1 -C "$PS2DEV"
+          rm ps2dev-latest.tar.gz
+          echo "--- installed tree ---"
+          ls "$PS2DEV"
 
-      - name: Verify shellcode.bin was produced
+      - name: Build PS2 shellcode
+        working-directory: ps2/shellcode
         run: |
-          test -s ps2/shellcode/shellcode.bin || { echo "shellcode.bin missing or empty"; exit 1; }
-          ls -l ps2/shellcode/shellcode.bin
+          export PATH="$PS2DEV/bin:$PS2DEV/ee/bin:$PS2DEV/iop/bin:$PS2DEV/dvp/bin:$PS2SDK/bin:$PATH"
+          make
+          ls -l shellcode.bin
 
       - name: Copy shellcode.bin into ps2 folder
         run: cp ps2/shellcode/shellcode.bin ps2/shellcode.bin

@@ -1,0 +1,81 @@
+name: Build Luac0re Save
+
+
+
+on:
+
+  workflow_dispatch:
+
+  push:
+
+    paths:
+
+      - 'Luac0re/ps2/**'
+
+      - '.github/workflows/build-luac0re-save.yml'
+
+
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+
+
+    steps:
+
+      - name: Checkout repository
+
+        uses: actions/checkout@v4
+
+
+
+      - name: Build PS2 shellcode with ps2dev Docker
+
+        run: |
+
+          docker run --rm \
+
+            -v "$GITHUB_WORKSPACE:/src" \
+
+            -w /src/Luac0re/ps2/shellcode \
+
+            ps2dev/ps2dev:latest \
+
+            make
+
+
+
+      - name: Copy shellcode.bin into ps2 folder
+
+        run: cp Luac0re/ps2/shellcode/shellcode.bin Luac0re/ps2/shellcode.bin
+
+
+
+      - name: Run savecraft.py
+
+        working-directory: Luac0re/ps2
+
+        run: python3 savecraft.py
+
+
+
+      - name: Upload crafted saves
+
+        uses: actions/upload-artifact@v4
+
+        with:
+
+          name: luac0re-saves
+
+          path: |
+
+            Luac0re/ps2/BASLUS-20268
+
+            Luac0re/ps2/BESLES-50366
+
+            Luac0re/ps2/BASLUS-20268.psu
+
+            Luac0re/ps2/BESLES-50366.psu

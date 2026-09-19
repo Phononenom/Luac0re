@@ -25,7 +25,11 @@ jobs:
           ls -la ps2/shellcode || true
 
       - name: Build PS2 shellcode with ps2dev Docker
-        run: docker run --rm -v "$GITHUB_WORKSPACE:/src" -w /src/ps2/shellcode ps2dev/ps2dev:latest make
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/src" -w /src/ps2/shellcode ps2dev/ps2dev:latest bash -c '
+            apt-get update -qq && apt-get install -y -qq make >/dev/null
+            make
+          '
 
       - name: Verify shellcode.bin was produced
         run: |
